@@ -135,19 +135,6 @@ export function VooSimulator() {
     return startPoint.balance * (params.withdrawPercent / 100)
   }, [result.points, params.withdrawStartYears, params.withdrawPercent])
 
-  // 末年提領金額 = 首年金額 × (1 + 通脹率)^(末年份 - 首年份)
-  const lastYearWithdraw = useMemo(() => {
-    if (firstYearWithdraw <= 0) return 0
-    if (params.totalYears < params.withdrawStartYears) return 0
-    const yearsOfGrowth = params.totalYears - params.withdrawStartYears
-    return firstYearWithdraw * (1 + params.inflation / 100) ** yearsOfGrowth
-  }, [
-    firstYearWithdraw,
-    params.totalYears,
-    params.withdrawStartYears,
-    params.inflation,
-  ])
-
   const setParam = (key: SliderKey, value: number) =>
     setParams((prev) => ({ ...prev, [key]: value }))
 
@@ -327,30 +314,17 @@ export function VooSimulator() {
                 />
               )}
               {spec.key === 'withdrawPercent' && (
-                <div className="space-y-1 font-mono text-xs text-muted-foreground">
-                  <p>
-                    首年提領(第 {params.withdrawStartYears} 年):每年{' '}
-                    <span className="text-foreground">
-                      {fmtCurrency(firstYearWithdraw)}
-                    </span>{' '}
-                    (每月{' '}
-                    <span className="text-foreground">
-                      {fmtCurrency(firstYearWithdraw / 12)}
-                    </span>
-                    )
-                  </p>
-                  <p>
-                    末年提領(第 {params.totalYears} 年):每年{' '}
-                    <span className="text-foreground">
-                      {fmtCurrency(lastYearWithdraw)}
-                    </span>{' '}
-                    (每月{' '}
-                    <span className="text-foreground">
-                      {fmtCurrency(lastYearWithdraw / 12)}
-                    </span>
-                    )
-                  </p>
-                </div>
+                <p className="font-mono text-xs text-muted-foreground">
+                  首年提領:每年{' '}
+                  <span className="text-foreground">
+                    {fmtCurrency(firstYearWithdraw)}
+                  </span>{' '}
+                  (每月{' '}
+                  <span className="text-foreground">
+                    {fmtCurrency(firstYearWithdraw / 12)}
+                  </span>
+                  )
+                </p>
               )}
             </div>
           ))}
