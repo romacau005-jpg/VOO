@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import { Shield, TrendingUp } from 'lucide-react'
 import { ExpensesPanel } from '@/components/simulator/expenses-panel'
+import { ReportDownload } from '@/components/simulator/report-download'
 import { Panel, ParamField, type FieldSpec } from '@/components/simulator/param-field'
 import { SimulationChart } from '@/components/simulator/simulation-chart'
 import {
@@ -18,6 +19,7 @@ const pct = (v: number) => `${v}%`
 const years = (v: number) => `${v} 年`
 
 const basicSpecs: { key: keyof SimulationParams; spec: FieldSpec }[] = [
+  { key: 'startAge', spec: { label: '起始年齡', min: 0, max: 100, step: 1, format: (v) => `${v} 歲`, inputSuffix: '歲' } },
   { key: 'initial', spec: { label: '現時 VOO 總資產', min: 0, max: 5_000_000, step: 100_000, format: fmtCurrency } },
   { key: 'monthly', spec: { label: '每月額外投入', min: 0, max: 50_000, step: 1_000, format: fmtCurrency } },
   { key: 'stopYears', spec: { label: '每月投入停止時間 (年)', min: 0, max: 50, step: 1, format: years } },
@@ -46,6 +48,7 @@ const defaultParams: SimulationParams = {
   rate: 0,
   inflation: 3,
   totalYears: 0,
+  startAge: 30,
 }
 
 const defaultBuckets: BucketParams = {
@@ -58,14 +61,10 @@ const defaultBuckets: BucketParams = {
   bearDrop: 20,
 }
 
-const defaultExpenses: OneTimeExpense[] = [
-  { id: 'default-house', name: '買樓首期', year: 10, amount: 2_000_000 },
-]
-
 export function VooSimulator() {
   const [params, setParams] = useState(defaultParams)
   const [buckets, setBuckets] = useState(defaultBuckets)
-  const [expenses, setExpenses] = useState(defaultExpenses)
+  const [expenses, setExpenses] = useState<OneTimeExpense[]>([])
 
   const result = useMemo(
     () => runSimulation(params, buckets, expenses),
@@ -202,6 +201,8 @@ export function VooSimulator() {
         onChange={setExpenses}
         totalYears={params.totalYears}
       />
+
+      <ReportDownload params={params} buckets={buckets} result={result} />
     </div>
   )
 }

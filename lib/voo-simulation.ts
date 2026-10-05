@@ -25,6 +25,8 @@ export type SimulationParams = {
   inflation: number
   /** 總滾存時間 (年) */
   totalYears: number
+  /** 起始年齡 (僅用於報告顯示) */
+  startAge: number
 }
 
 export type BucketParams = {
@@ -55,6 +57,18 @@ export type YearPoint = {
   expense: number
   expenseItems: { name: string; amount: number }[]
   isBear: boolean
+  /** 當年初總資產 */
+  startBalance: number
+  /** 當年供款 */
+  yearContribution: number
+  /** 當年實際提領 */
+  yearWithdrawal: number
+  /** 當年股票 / VOO 回報率 (%) */
+  stockReturn: number
+  /** 當年名目投資收益 */
+  gain: number
+  /** 以通脹折現回第 1 年購買力的年底資產 */
+  realBalance: number
 }
 
 export type SimulationResult = {
@@ -63,6 +77,7 @@ export type SimulationResult = {
   totalWithdrawn: number
   totalExpenses: number
   finalBalance: number
+  finalRealBalance: number
   firstYearWithdraw: number
   depletedYear: number | null
 }
@@ -133,12 +148,21 @@ export function runSimulation(
       expense: 0,
       expenseItems: [],
       isBear: false,
+      startBalance: initial,
+      yearContribution: initial,
+      yearWithdrawal: 0,
+      stockReturn: 0,
+      gain: 0,
+      realBalance: initial,
     },
   ]
 
   for (let yr = 1; yr <= totalYears; yr++) {
     const isBear = bearInterval > 0 && bearDrop > 0 && yr % bearInterval === 0
     const inWithdrawal = withdrawStartYears > 0 && yr >= withdrawStartYears
+    const startBalance = total()
+    const investedBefore = invested
+    const withdrawnBefore = withdrawn
 
     // 1. 年初先扣除一次性大額支出 (三桶水:股票 → 債券 → 現金)
     const yearExpenses = expenses.filter((e) => e.year === yr && e.amount > 0)
@@ -202,7 +226,16 @@ export function runSimulation(
       depletedYear = yr
     }
 
+    const yearContribution = invested - investedBefore
+    const yearWithdrawal = withdrawn - withdrawnBefore
+
     points.push({
+      startBalance,
+      yearContribution,
+      yearWithdrawal,
+      stockReturn: isBear ? -Math.min(bearDrop, 99) : rate,
+      gain: balance - startBalance - yearContribution + yearWithdrawal + expenseTaken,
+      realBalance: balance / Math.pow(1 + inflation / 100, yr),
       year: yr,
       balance,
       cash: b.cash,
@@ -222,6 +255,7 @@ export function runSimulation(
     totalWithdrawn: withdrawn,
     totalExpenses,
     finalBalance: total(),
+    finalRealBalance: total() / Math.pow(1 + inflation / 100, totalYears),
     firstYearWithdraw,
     depletedYear,
   }
